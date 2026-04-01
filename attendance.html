@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>出席登録｜学習塾スタイル</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #c8a84a;
+    --gold-dark: #7a6420;
+    --bg: #0f1923;
+    --bg2: #1a2a1a;
+    --card: rgba(255,255,255,0.04);
+    --border: rgba(180,150,80,0.22);
+    --text: #e8e0d0;
+    --muted: #888;
+    --success: #6fda80;
+    --warn: #d4b040;
+    --danger: #f08080;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    background: linear-gradient(135deg, var(--bg) 0%, var(--bg2) 50%, var(--bg) 100%);
+    font-family: 'Noto Sans JP', sans-serif;
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Header */
+  header {
+    background: rgba(0,0,0,0.4);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    backdrop-filter: blur(10px);
+  }
+  .logo { display:flex; align-items:center; gap:12px; }
+  .logo-icon {
+    width:36px; height:36px; border-radius:8px;
+    background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+    display:flex; align-items:center; justify-content:center;
+    font-size:18px; font-weight:bold; color:#fff;
+  }
+  .logo-title { font-size:17px; font-weight:700; letter-spacing:2px; color:var(--gold); }
+  #clock { font-size:13px; color:var(--muted); }
+
+  /* Main */
+  main { flex:1; max-width:560px; width:100%; margin:0 auto; padding:40px 20px; }
+
+  /* Card */
+  .card {
+    background:var(--card); border:1px solid var(--border);
+    border-radius:16px; padding:40px 36px;
+    box-shadow:0 8px 40px rgba(0,0,0,0.4);
+    animation: fadeUp 0.35s ease;
+  }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+  .attend-header { text-align:center; margin-bottom:36px; }
+  .attend-icon { font-size:44px; margin-bottom:10px; }
+  .attend-title { font-size:24px; font-weight:700; color:var(--gold); letter-spacing:3px; margin-bottom:6px; }
+  .attend-date { font-size:13px; color:var(--muted); }
+
+  label.field-label { display:block; font-size:13px; color:#aaa; margin-bottom:10px; text-align:center; }
+  input.id-input {
+    width:100%; padding:16px; font-size:28px; letter-spacing:8px; text-align:center;
+    background:rgba(255,255,255,0.06); border:1.5px solid rgba(180,150,80,0.3);
+    border-radius:12px; color:#fff; outline:none; font-family:inherit;
+    transition:border-color 0.2s;
+  }
+  input.id-input:focus { border-color:var(--gold); box-shadow:0 0 0 3px rgba(200,168,74,0.1); }
+
+  .loading-wrap { display:none; margin-top:20px; text-align:center; }
+  .loading-wrap.show { display:block; }
+  .spinner {
+    display:inline-block; width:30px; height:30px;
+    border:3px solid rgba(200,168,74,0.2);
+    border-top-color:var(--gold);
+    border-radius:50%;
+    animation:spin 0.8s linear infinite;
+  }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  .loading-text { font-size:12px; color:var(--muted); margin-top:8px; letter-spacing:2px; }
+
+  .today-section { margin-top:28px; }
+  .section-label { font-size:12px; color:var(--muted); letter-spacing:1px; margin-bottom:10px; }
+  .record-row {
+    display:flex; justify-content:space-between; align-items:center;
+    background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07);
+    border-radius:8px; padding:10px 16px; margin-bottom:5px; font-size:14px;
+  }
+  .record-id { color:var(--gold); font-weight:700; min-width:64px; }
+  .record-name { flex:1; margin:0 12px; }
+  .record-time { font-size:12px; color:#666; }
+
+  #popup-overlay {
+    display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+    background:rgba(0,0,0,0.75); z-index:999;
+    align-items:center; justify-content:center;
+    backdrop-filter:blur(6px);
+  }
+  #popup-overlay.show { display:flex; animation:fadeIn 0.2s ease; }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+  #popup-box {
+    background:linear-gradient(135deg,#1a2a1a,#0f1923);
+    border:1px solid var(--border);
+    border-radius:24px; padding:44px 40px;
+    text-align:center; min-width:280px; max-width:90vw;
+    box-shadow:0 24px 64px rgba(0,0,0,0.6);
+    animation:popUp 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes popUp { from{opacity:0;transform:scale(0.8)} to{opacity:1;transform:scale(1)} }
+
+  #config-banner {
+    background:rgba(220,60,60,0.15); border:1px solid rgba(220,60,60,0.4);
+    border-radius:10px; padding:12px 16px; margin-bottom:20px;
+    font-size:13px; color:var(--danger); text-align:center; display:none;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">塾</div>
+    <div class="logo-title">出席登録</div>
+  </div>
+  <span id="clock"></span>
+</header>
+
+<main>
+  <div id="config-banner">
+    ⚠️ GAS URLが設定されていません。このファイルの <code>GAS_URL</code> を書き換えてください。
+  </div>
+
+  <div class="card">
+    <div class="attend-header">
+      <div class="attend-icon">📚</div>
+      <div class="attend-title">出席登録</div>
+      <div class="attend-date" id="today-info"></div>
+    </div>
+
+    <label class="field-label">学生番号を入力してください（5桁）</label>
+    <input class="id-input" id="student-id-input"
+      type="text" inputmode="numeric" pattern="[0-9]*"
+      placeholder="00001" maxlength="5"
+      autocomplete="off" spellcheck="false">
+
+    <div class="loading-wrap" id="loading-wrap">
+      <div class="spinner"></div>
+      <div class="loading-text">登録中...</div>
+    </div>
+
+    <div class="today-section" id="today-section" style="display:none">
+      <div class="section-label">📋 本日の出席（最新10件）</div>
+      <div id="today-list"></div>
+    </div>
+  </div>
+</main>
+
+<div id="popup-overlay" onclick="hidePopup()">
+  <div id="popup-box"></div>
+</div>
+
+<script>
+// ============================================================
+// ★ ここを書き換えてください ★
+// GASをデプロイした後に取得したURLを貼り付けてください
+// ============================================================
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwp_NOYnSDRqQvOe4yGEmzWA1Ptx_vS4C1HVF_uZPaPxDFcTUMH9FzqJLQsFHrkjkmhlA/exec";
+// ============================================================
+
+if (GAS_URL === "YOUR_GAS_URL_HERE") {
+  document.getElementById("config-banner").style.display = "block";
+}
+
+// 時計
+function updateClock() {
+  document.getElementById("clock").textContent = new Date().toLocaleTimeString("ja-JP");
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// 今日の日付
+document.getElementById("today-info").textContent =
+  new Intl.DateTimeFormat("ja-JP",{year:"numeric",month:"long",day:"numeric",weekday:"short"}).format(new Date());
+
+// GAS通信
+async function gasPost(payload) {
+  if (GAS_URL === "YOUR_GAS_URL_HERE") throw new Error("GAS URLが設定されていません");
+  const res = await fetch(GAS_URL, { method:"POST", body:JSON.stringify(payload) });
+  return await res.json();
+}
+
+// 本日の出席一覧
+async function loadTodayRecords() {
+  if (GAS_URL === "YOUR_GAS_URL_HERE") return;
+  try {
+    const t = new Date();
+    const filterDate = `${t.getFullYear()}/${String(t.getMonth()+1).padStart(2,"0")}/${String(t.getDate()).padStart(2,"0")}`;
+    const data = await gasPost({ action:"getRecords", filterDate });
+    if (data.ok) renderTodayList(data.records);
+  } catch(e) { console.warn("loadTodayRecords:", e); }
+}
+
+function renderTodayList(recs) {
+  const sec  = document.getElementById("today-section");
+  const list = document.getElementById("today-list");
+  if (!recs || !recs.length) { sec.style.display="none"; return; }
+  sec.style.display = "block";
+  list.innerHTML = recs.slice(0,10).map(r=>`
+    <div class="record-row">
+      <span class="record-id">${r.studentId}</span>
+      <span class="record-name">${r.name}</span>
+      <span class="record-time">${new Date(r.timestamp).toLocaleTimeString("ja-JP")}</span>
+    </div>`).join("");
+}
+
+// 入力
+const input = document.getElementById("student-id-input");
+input.addEventListener("input", e => {
+  e.target.value = e.target.value.replace(/[^0-9]/g, "");
+  if (e.target.value.length === 5) handleAttend();
+});
+input.addEventListener("keydown", e => { if (e.key === "Enter") handleAttend(); });
+
+let _errorCount = 0;
+
+async function handleAttend() {
+  const id = input.value.trim();
+  if (!id) { showPopup("error","","学生番号を入力してください。",""); return; }
+  if (id.length !== 5) { showPopup("error","","学生番号は5桁の数字を入力してください。",""); return; }
+
+  input.disabled = true;
+  document.getElementById("loading-wrap").classList.add("show");
+
+  try {
+    const data = await gasPost({ action:"attend", studentId:id });
+
+    if (data.ok) {
+      _errorCount = 0;
+      playSound("success");
+      showPopup("success", data.name, `${data.name}さんの出席を登録しました！`, data.time);
+      loadTodayRecords();
+    } else if (data.duplicate) {
+      playSound("error");
+      showPopup("duplicate", data.name, `${data.name}さんは本日すでに出席済みです`, `登録時刻：${data.time}`);
+    } else {
+      _errorCount++;
+      if (_errorCount >= 5) { playSound("alarm"); _errorCount = 0; }
+      else playSound("error");
+      showPopup("error","", data.error || "エラーが発生しました","");
+    }
+  } catch(e) {
+    playSound("error");
+    showPopup("error","","通信エラーが発生しました。\nネットワークを確認してください。","");
+  } finally {
+    document.getElementById("loading-wrap").classList.remove("show");
+    input.disabled = false;
+    input.value = "";
+    input.focus();
+  }
+}
+
+// ポップアップ
+function showPopup(type, name, msg, time) {
+  const overlay = document.getElementById("popup-overlay");
+  const box     = document.getElementById("popup-box");
+  const icons  = { success:"✅", duplicate:"⚠️", error:"❌" };
+  const colors = { success:"var(--success)", duplicate:"var(--warn)", error:"var(--danger)" };
+  const borders= { success:"rgba(60,180,80,0.5)", duplicate:"rgba(180,140,0,0.5)", error:"rgba(220,60,60,0.5)" };
+  box.style.borderColor = borders[type];
+  box.innerHTML = `
+    <div style="font-size:56px;margin-bottom:14px">${icons[type]}</div>
+    <div style="font-size:24px;font-weight:700;color:${colors[type]};margin-bottom:10px">${name||""}</div>
+    <div style="font-size:15px;color:var(--text);white-space:pre-line;line-height:1.6">${msg}</div>
+    ${time?`<div style="font-size:12px;color:var(--muted);margin-top:10px">${time}</div>`:""}`;
+  overlay.classList.add("show");
+  clearTimeout(window._popupTimer);
+  window._popupTimer = setTimeout(hidePopup, 3000);
+}
+
+function hidePopup() {
+  const o = document.getElementById("popup-overlay");
+  o.style.opacity = "0";
+  o.style.transition = "opacity 0.35s";
+  setTimeout(() => {
+    o.classList.remove("show");
+    o.style.opacity = "";
+    o.style.transition = "";
+  }, 350);
+}
+
+// 効果音
+const _ac = new (window.AudioContext || window.webkitAudioContext)();
+function playSound(type) {
+  try {
+    if (_ac.state === "suspended") _ac.resume();
+    if (type === "success") {
+      [523.25, 783.99].forEach((freq, i) => {
+        const o = _ac.createOscillator(), g = _ac.createGain();
+        o.connect(g); g.connect(_ac.destination);
+        o.type = "sine"; o.frequency.value = freq;
+        const t = _ac.currentTime + i * 0.15;
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(0.3, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+        o.start(t); o.stop(t + 0.25);
+      });
+    } else if (type === "error") {
+      const o = _ac.createOscillator(), g = _ac.createGain();
+      o.connect(g); g.connect(_ac.destination);
+      o.type = "sawtooth"; o.frequency.value = 180;
+      g.gain.setValueAtTime(0.3, _ac.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, _ac.currentTime + 0.3);
+      o.start(_ac.currentTime); o.stop(_ac.currentTime + 0.3);
+    } else if (type === "alarm") {
+      for (let i = 0; i < 3; i++) {
+        const o = _ac.createOscillator(), g = _ac.createGain();
+        o.connect(g); g.connect(_ac.destination);
+        o.type = "square";
+        const t = _ac.currentTime + i * 0.4;
+        o.frequency.setValueAtTime(880, t);
+        o.frequency.linearRampToValueAtTime(440, t + 0.3);
+        g.gain.setValueAtTime(0.4, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+        o.start(t); o.stop(t + 0.35);
+      }
+    }
+  } catch(e) { console.warn("Sound error:", e); }
+}
+
+// 初期ロード
+loadTodayRecords();
+input.focus();
+</script>
+</body>
+</html>
