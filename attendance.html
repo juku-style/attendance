@@ -87,16 +87,7 @@
   @keyframes spin { to{transform:rotate(360deg)} }
   .loading-text { font-size:12px; color:var(--muted); margin-top:8px; letter-spacing:2px; }
 
-  .today-section { margin-top:28px; }
-  .section-label { font-size:12px; color:var(--muted); letter-spacing:1px; margin-bottom:10px; }
-  .record-row {
-    display:flex; justify-content:space-between; align-items:center;
-    background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07);
-    border-radius:8px; padding:10px 16px; margin-bottom:5px; font-size:14px;
-  }
-  .record-id { color:var(--gold); font-weight:700; min-width:64px; }
-  .record-name { flex:1; margin:0 12px; }
-  .record-time { font-size:12px; color:#666; }
+
 
   #popup-overlay {
     display:none; position:fixed; top:0; left:0; width:100%; height:100%;
@@ -156,10 +147,7 @@
       <div class="loading-text">登録中...</div>
     </div>
 
-    <div class="today-section" id="today-section" style="display:none">
-      <div class="section-label">📋 本日の出席（最新10件）</div>
-      <div id="today-list"></div>
-    </div>
+
   </div>
 </main>
 
@@ -197,31 +185,7 @@ async function gasPost(payload) {
   return await res.json();
 }
 
-// 本日の出席一覧
-async function loadTodayRecords() {
-  if (GAS_URL === "YOUR_GAS_URL_HERE") return;
-  try {
-    const t = new Date();
-    const filterDate = `${t.getFullYear()}/${String(t.getMonth()+1).padStart(2,"0")}/${String(t.getDate()).padStart(2,"0")}`;
-    const data = await gasPost({ action:"getRecords", filterDate });
-    if (data.ok) renderTodayList(data.records);
-  } catch(e) { console.warn("loadTodayRecords:", e); }
-}
 
-function renderTodayList(recs) {
-  const sec  = document.getElementById("today-section");
-  const list = document.getElementById("today-list");
-  if (!recs || !recs.length) { sec.style.display="none"; return; }
-  sec.style.display = "block";
-  list.innerHTML = recs.slice(0,10).map(r=>`
-    <div class="record-row">
-      <span class="record-id">${r.studentId}</span>
-      <span class="record-name">${r.name}</span>
-      <span class="record-time">${new Date(r.timestamp).toLocaleTimeString("ja-JP")}</span>
-    </div>`).join("");
-}
-
-// 入力
 const input = document.getElementById("student-id-input");
 input.addEventListener("input", e => {
   e.target.value = e.target.value.replace(/[^0-9]/g, "");
@@ -246,7 +210,6 @@ async function handleAttend() {
       _errorCount = 0;
       playSound("success");
       showPopup("success", data.name, `${data.name}さんの出席を登録しました！`, data.time);
-      loadTodayRecords();
     } else if (data.duplicate) {
       playSound("error");
       showPopup("duplicate", data.name, `${data.name}さんは本日すでに出席済みです`, `登録時刻：${data.time}`);
@@ -336,7 +299,6 @@ function playSound(type) {
 }
 
 // 初期ロード
-loadTodayRecords();
 input.focus();
 </script>
 </body>
